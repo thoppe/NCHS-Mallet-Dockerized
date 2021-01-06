@@ -17,6 +17,7 @@ from tqdm import tqdm
 # for text in tqdm(df.text):
 #    doc = nlp(text)
 
+script_dir = Path(__file__).parent
 
 class PreprocessLDA:
     def __init__(self):
@@ -29,7 +30,8 @@ class PreprocessLDA:
         self.max_chunk_length = 3
 
         # Default to NLTK stopwords
-        with open("stopwords/NLTK_stopwords.txt") as FIN:
+        f_NLTK_stop = script_dir / "stopwords/NLTK_stopwords.txt"
+        with open(f_NLTK_stop) as FIN:
             self.stopwords = FIN.read().split("\n")
 
     def extract_tokens_and_phrases(self, doc):
@@ -115,11 +117,11 @@ class MalletLDA:
         dx = pd.DataFrame()
 
         ITR = tqdm(lines, total=len(lines))
-        dx["tokenized_text"] = [clf(line) for line in ITR]
+        dx["tokenized_text"] = list(clf(ITR))
 
         # Convert to mallet 3-column format: docID<tab>label<tab>text
-        dx = df[["tokenized_text"]].fillna("")
-        dx["docID"] = range(1, len(df) + 1)
+        dx = dx.fillna("")
+        dx["docID"] = range(1, len(dx) + 1)
         dx["model_name"] = self.model_name
         dx = dx[["docID", "model_name", "tokenized_text"]]
         dx = dx.set_index("docID")
@@ -179,16 +181,3 @@ class MalletLDA:
         word_weights.columns = ["topicID", "word", "weight"]
 
         return topics, doc_topics, word_weights
-
-
-df = pd.read_csv("pp_raw_documents.csv", nrows=200)
-
-LDA = MalletLDA()
-
-tokens = LDA.preprocess(df["text"])
-doc_topics, topics, word_weights = LDA.train(tokens)
-
-dx = word_weights
-print(dx)
-
-exit()
