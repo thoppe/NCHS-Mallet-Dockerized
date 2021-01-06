@@ -7,10 +7,6 @@ import spacy
 import pandas as pd
 from tqdm import tqdm
 
-# Part of the install
-# import nltk
-# nltk.download('stopwords')
-
 # Default to NLTK stopwords
 
 # 7.4 seconds
