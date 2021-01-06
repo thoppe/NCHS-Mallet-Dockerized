@@ -35,7 +35,8 @@ def train(q: LDA_input):
     
     result = {
         "words" : word_weights.to_json(orient='split'),
-        #"documents" : doc_topics,
-        #"topics" : topics.to_json(),
+        "topics" : topics.to_json(orient='split'),
+        "documents" : doc_topics.tolist(),
+        
     }
     return result
