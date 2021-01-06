@@ -20,6 +20,7 @@ from tqdm import tqdm
 script_dir = Path(__file__).parent
 mallet_EXEC_src = script_dir / "mallet-2.0.8" / "bin" / "mallet"
 
+
 class spaCyPreprocess:
     def __init__(self):
 
@@ -117,9 +118,9 @@ class MalletLDA:
 
         dx = pd.DataFrame()
 
-        #ITR = tqdm(lines, total=len(lines))
-        #dx["tokenized_text"] = list(clf(ITR))
-        dx['tokenized_text'] = lines
+        # ITR = tqdm(lines, total=len(lines))
+        # dx["tokenized_text"] = list(clf(ITR))
+        dx["tokenized_text"] = lines
 
         # Convert to mallet 3-column format: docID<tab>label<tab>text
         dx = dx.fillna("")
