@@ -3,7 +3,7 @@ import numpy as np
 
 import requests
 
-df = pd.read_csv("pp_raw_documents.csv", nrows=200)
+df = pd.read_csv("pp_raw_documents.csv", nrows=100)
 
 url = "http://127.0.0.1:8000/LDA/preprocess"
 params = {"text_input": df["text"].values.tolist()}
