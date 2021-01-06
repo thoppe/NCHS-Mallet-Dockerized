@@ -1,0 +1,8 @@
+# NLP
+spacy==2.3.4
+
+# Data Science
+pandas==1.1.5
+
+# Utils
+tqdm==4.48.2

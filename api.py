@@ -1,13 +1,11 @@
-import spacy
-from nltk.corpus import stopwords
-import pandas as pd
-
-from tqdm import tqdm
-import re
-
+from pathlib import Path
 import tempfile
 import os
-from pathlib import Path
+import re
+
+import spacy
+import pandas as pd
+from tqdm import tqdm
 
 # Part of the install
 # import nltk
@@ -35,7 +33,8 @@ class PreprocessLDA:
         self.max_chunk_length = 3
 
         # Default to NLTK stopwords
-        self.stopwords = set(stopwords.words("english"))
+        with open("stopwords/NLTK_stopwords.txt") as FIN:
+            self.stopwords = FIN.read().split("\n")
 
     def extract_tokens_and_phrases(self, doc):
         # Given a spaCy document, returns list of tokens, list of phrases
@@ -100,7 +99,7 @@ class PreprocessLDA:
 
 class MalletLDA:
     def __init__(self, model_name="MalletLDA"):
-        
+
         self.mallet_EXEC = "~/src/mallet-2.0.8/bin/mallet"
         self.model_name = model_name
         self.workdir = tempfile.TemporaryDirectory()
@@ -109,12 +108,12 @@ class MalletLDA:
         return str(Path(self.workdir.name) / f"{self.model_name}.{name}")
 
     def preprocess(self, lines):
-        '''
+        """
         SpaCy preprocessing and NLTK stopword removal. Takes in a list of 
         strings and returns a three-column dataframe of [docID, model_name,
         tokenized_text]. docID is sequentially assigned starting at 1.
-        '''
-        
+        """
+
         clf = PreprocessLDA()
 
         dx = pd.DataFrame()
@@ -132,10 +131,10 @@ class MalletLDA:
         return dx
 
     def _import_file(self, df):
-        '''
+        """
         Takes a dataframe from .preprocess and saves the import file
         into the temp working directory.
-        '''
+        """
         cmd = (
             f"{self.mallet_EXEC} import-file"
             f" --input {self.f('input')}"
@@ -145,16 +144,16 @@ class MalletLDA:
             " --keep-sequence"
         )
 
-        df.to_csv(self.f('input'), sep='\t', encoding='utf-8', header=None)
+        df.to_csv(self.f("input"), sep="\t", encoding="utf-8", header=None)
         os.system(cmd)
 
-    def train(self, df, n_topics = 10, n_optimize_interval = 10, n_interations=1000):
-        '''
+    def train(self, df, n_topics=10, n_optimize_interval=10, n_interations=1000):
+        """
         Runs MALLET against the imported data.
-        '''
+        """
 
         self._import_file(df)
-        
+
         cmd = (
             f"{self.mallet_EXEC} train-topics"
             f" --input {self.f('vocab')}"
@@ -170,18 +169,18 @@ class MalletLDA:
             f" --topic-word-weights-file  {self.f('topic-word-weights')}"
         )
         os.system(cmd)
-        os.system(f'ls -lh {self.workdir.name}')
+        os.system(f"ls -lh {self.workdir.name}")
 
-        doc_topics = pd.read_csv(self.f('doc-topics'), sep='\t', header=None)
-        doc_topics = doc_topics[range(2, n_topics+2)].values
+        doc_topics = pd.read_csv(self.f("doc-topics"), sep="\t", header=None)
+        doc_topics = doc_topics[range(2, n_topics + 2)].values
         assert doc_topics.shape == (len(df), n_topics)
 
-        topics = pd.read_csv(self.f('topic-keys'), sep='\t', header=None)
-        topics.columns = ['topicID', 'alpha', 'top_words']
+        topics = pd.read_csv(self.f("topic-keys"), sep="\t", header=None)
+        topics.columns = ["topicID", "alpha", "top_words"]
         assert len(topics) == n_topics
 
-        word_weights = pd.read_csv(self.f('topic-word-weights'), sep='\t', header=None)
-        word_weights.columns = ['topicID', 'word', 'weight']
+        word_weights = pd.read_csv(self.f("topic-word-weights"), sep="\t", header=None)
+        word_weights.columns = ["topicID", "word", "weight"]
 
         return topics, doc_topics, word_weights
 
@@ -190,11 +189,10 @@ df = pd.read_csv("pp_raw_documents.csv", nrows=200)
 
 LDA = MalletLDA()
 
-tokens = LDA.preprocess(df['text'])
+tokens = LDA.preprocess(df["text"])
 doc_topics, topics, word_weights = LDA.train(tokens)
 
 dx = word_weights
 print(dx)
 
 exit()
-
