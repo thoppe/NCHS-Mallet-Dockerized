@@ -3,7 +3,8 @@ import numpy as np
 
 import requests
 
-df = pd.read_csv("pp_raw_documents.csv", nrows=100)
+f_data = 'example_data/reddit_suicide_data.csv'
+df = pd.read_csv(f_data, nrows=100)
 
 url = "http://127.0.0.1:8000/LDA/preprocess"
 params = {"text_input": df["text"].values.tolist()}
@@ -14,7 +15,7 @@ js = r.json()
 
 
 url = "http://127.0.0.1:8000/LDA/train"
-params = {"text_input": df["text"].values.tolist()}
+js['n_topics'] = 7
 r = requests.get(url, json=js)
 js = r.json()
 

@@ -13,8 +13,9 @@ LDA_PRE = spaCyPreprocess()
 
 
 class LDA_input(BaseModel):
-    text_input: List[str]
-    text_tokenized: Optional[List[str]]
+    text_input: Optional[List[str]]
+    text_tokenized:Optional[List[str]]
+    n_topics: int=10
 
 
 @app.get("/LDA/preprocess")
@@ -29,7 +30,8 @@ def preprocess(q: LDA_input) -> LDA_input:
 
 @app.get("/LDA/train")
 def train(q: LDA_input):
-    topics, doc_topics, word_weights = LDA.train(q.text_tokenized)
+    topics, doc_topics, word_weights = LDA.train(
+        q.text_tokenized, n_topics = q.n_topics)
 
     result = {
         "words": word_weights.to_json(orient="split"),

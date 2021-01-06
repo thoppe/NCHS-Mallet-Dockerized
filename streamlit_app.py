@@ -10,7 +10,7 @@ import numpy as np
 # https://towardsdatascience.com/topic-modelling-in-python-with-nltk-and-gensim-4ef03213cd21  ... pyLDAvis
 
 num_words = 150
-document_limit = 100
+document_limit = 5000
 
 # Display options
 st.set_page_config(
@@ -52,9 +52,14 @@ def preprocess_input(f_dataset):
 @st.cache
 def train_tokenized(tokenized, n_topics):
 
+    data_input = {
+        "text_tokenized" : tokenized['text_tokenized'],
+        'n_topics' : n_topics,
+    }
+    
     with st.spinner("*Running MALLET*"):
         url = "http://127.0.0.1:8000/LDA/train"
-        r = requests.get(url, json=tokenized)
+        r = requests.get(url, json=data_input)
         js = r.json()
 
         words = pd.read_json(js["words"], orient="split")
@@ -64,9 +69,9 @@ def train_tokenized(tokenized, n_topics):
     return words, topics, docs
 
 
-
 tokenized = preprocess_input(f_dataset)
 words, topics, docs = train_tokenized(tokenized, n_topics)
+
 
 import wordcloud
 import itertools

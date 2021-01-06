@@ -125,7 +125,9 @@ class MalletLDA:
         # Convert to mallet 3-column format: docID<tab>label<tab>text
         dx = dx.fillna("")
         dx["docID"] = range(1, len(dx) + 1)
-        dx["model_name"] = self.model_name
+
+        # Need to leave model_name blank otherwise MALLET adds it as word
+        dx["model_name"] = ""
         dx = dx[["docID", "model_name", "tokenized_text"]]
 
         return dx
