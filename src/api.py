@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Optional
 
-from mallet import MalletLDA, spaCyPreprocess
+from mallet_interface import MalletLDA, spaCyPreprocess
 
 
 app = FastAPI()
@@ -30,8 +30,6 @@ def preprocess(q: LDA_input) -> LDA_input:
 @app.get("/LDA/train")
 def train(q: LDA_input):
     topics, doc_topics, word_weights = LDA.train(q.text_tokenized)
-
-    print(word_weights.index.dtype)
     
     result = {
         "words" : word_weights.to_json(orient='split'),
