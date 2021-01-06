@@ -1,13 +1,22 @@
 import pandas as pd
-from src.api import MalletLDA
+
+import requests
 
 df = pd.read_csv("pp_raw_documents.csv", nrows=200)
 
-LDA = MalletLDA()
+url = 'http://127.0.0.1:8000/LDA/preprocess'
+params = {"text_input" : df['text'].values.tolist()}
 
-tokens = LDA.preprocess(df["text"])
-doc_topics, topics, word_weights = LDA.train(tokens)
+r = requests.get(url, json=params)
 
-dx = word_weights
-print(dx)
+js = r.json()
+
+
+url = 'http://127.0.0.1:8000/LDA/train'
+params = {"text_input" : df['text'].values.tolist()}
+r = requests.get(url, json=js)
+js = r.json()
+
+words = pd.read_json(js['words'], orient='split')
+print(words)
 
