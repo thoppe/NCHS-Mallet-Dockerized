@@ -17,6 +17,15 @@ class LDA_input(BaseModel):
     text_tokenized:Optional[List[str]]
     n_topics: int=10
 
+@app.get("/")
+def api_info():
+    """
+    Returns basic information about the api.
+    """
+    return {
+        "name" : "nchs_mallet_api",
+        "version": __version__,
+    }
 
 @app.get("/LDA/preprocess")
 def preprocess(q: LDA_input) -> LDA_input:

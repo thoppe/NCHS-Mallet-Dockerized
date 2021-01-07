@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
-
 import requests
+
+
+url = "http://127.0.0.1:8000/"
+print(requests.get(url).content)
 
 f_data = 'example_data/reddit_suicide_data.csv'
 df = pd.read_csv(f_data, nrows=100)

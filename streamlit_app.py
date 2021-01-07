@@ -2,15 +2,16 @@ import streamlit as st
 import pandas as pd
 import requests
 import numpy as np
+import wordcloud
+import itertools
 
-#import numpy as np
-#import wordcloud
 
 # Try this?
 # https://towardsdatascience.com/topic-modelling-in-python-with-nltk-and-gensim-4ef03213cd21  ... pyLDAvis
 
 num_words = 150
 document_limit = 5000
+st_time_to_live = 4*3600
 
 # Display options
 st.set_page_config(
@@ -22,7 +23,9 @@ st.set_page_config(
 st.title("Topic model explorer")
 
 st.sidebar.title("Options")
-n_topics = st.sidebar.slider("Number of Topics", 5, 20, value=10)
+n_topics = st.sidebar.slider("Number of Topics", 5, 20, value=9)
+
+n_sort_topic = st.sidebar.slider("Topic sort order by", 0, n_topics-1)
 
 # Custom fileupload
 st.sidebar.markdown("## Custom dataset")
@@ -38,7 +41,7 @@ df = pd.read_csv(f_dataset, nrows=document_limit)
 n_documents = len(df)
 st.write(f"Loaded {n_documents:,} documents into memory.")
 
-@st.cache
+@st.cache(ttl=st_time_to_live)
 def preprocess_input(f_dataset):
     with st.spinner("*Preprocessing text with spaCy*"):
         url = "http://127.0.0.1:8000/LDA/preprocess"
@@ -49,7 +52,7 @@ def preprocess_input(f_dataset):
     
     return js
 
-@st.cache
+@st.cache(ttl=st_time_to_live)
 def train_tokenized(tokenized, n_topics):
 
     data_input = {
@@ -68,71 +71,50 @@ def train_tokenized(tokenized, n_topics):
 
     return words, topics, docs
 
+@st.cache(ttl=st_time_to_live)
+def compute_wordclouds(words):
+    imgs = []
+
+    for topicID, dx in words.groupby("topicID"):
+        dx = dx.sort_values("weight", ascending=False)
+    
+        freq = {k: v for k, v in zip(dx.word, dx.weight)}
+        WC = wordcloud.WordCloud(
+            max_words=2000,
+            prefer_horizontal=1,
+            relative_scaling=0.75,
+            max_font_size=60,
+            random_state=13,
+        )
+        w = WC.generate_from_frequencies(freq)
+        img = w.to_array()
+
+        imgs.append(img)
+
+    return imgs
+
+
 
 tokenized = preprocess_input(f_dataset)
 words, topics, docs = train_tokenized(tokenized, n_topics)
 
+with st.beta_expander(label='Word Clouds'):
+    cols = st.beta_columns(3)
+    col = itertools.cycle(cols)
 
-import wordcloud
-import itertools
+    for i, img in enumerate(compute_wordclouds(words)):
+        active_column = next(col)
+        active_column.image(img, f"Topic {i}", use_column_width=True)
 
-imgs = []
-cols = st.beta_columns(3)
-col = itertools.cycle(cols)
+with st.beta_expander(label='Document Labels (top 200)'):
+    dx = pd.DataFrame(docs).sort_values(n_sort_topic, ascending=False)[:200]
+    dx *= 100
 
-for topicID, dx in words.groupby("topicID"):
-    dx = dx.sort_values("weight", ascending=False)
-    
-    freq = {k: v for k, v in zip(dx.word, dx.weight)}
-    WC = wordcloud.WordCloud()
-    w = WC.generate_from_frequencies(freq)
-    img = w.to_array()
-    
-    active_column = next(col)
-    active_column.image(img, f"Topic {topicID}", use_column_width=True)
-
-
-
-tmp='''
-
-status = [st.empty()] * 4
-
-text = interface.preprocess_text(df)
-status[1].write(f"Finished preprocessing text.")
-
-words = interface.train_lda(text, num_topics, num_words=num_words)
-status[3].write(f"Finished LDA")
-
-# Clean the computation window
-for item in status:
-    item.empty()
-
-dx = pd.DataFrame()
-
-for i in range(num_topics):
-    dx[f"topic{i}"] = list(zip(*words[i]))[0]
-    dx[f"w{i}"] = list(zip(*words[i]))[1]
-    dx[f"w{i}"] *= 100
-
-labels = [f"w{i}" for i in range(num_topics)]
-tableviz = (
-    dx[:10]
-    .style.background_gradient(cmap="Blues", subset=labels)
-    .format("{:0.2f}", subset=labels)
-)
-st.write(tableviz, index=False)
-
-import itertools
-
-cols = st.beta_columns(2)
-col = itertools.cycle(cols)
-
-for i, wordset in enumerate(words):
-    freq = {k: v for k, v in wordset}
-    WC = wordcloud.WordCloud()
-    w = WC.generate_from_frequencies(freq)
-    img = w.to_array()
-
-    active_column = next(col)
-    active_column.image(img, f"Topic {i}", use_column_width=True)
-'''
+    dx.insert(loc=0, column='text', value=df['text'])
+    labels = list(range(n_topics))
+    tableviz = (
+        dx
+        .style.background_gradient(cmap="Blues", subset=labels)
+        .format("{:0.0f}", subset=labels)
+    )
+    st.table(tableviz)
