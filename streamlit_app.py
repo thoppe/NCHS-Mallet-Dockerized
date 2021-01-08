@@ -11,7 +11,7 @@ import itertools
 
 num_words = 150
 document_limit = 5000
-st_time_to_live = 4*3600
+st_time_to_live = 4 * 3600
 
 # Display options
 st.set_page_config(
@@ -25,7 +25,7 @@ st.title("Topic model explorer")
 st.sidebar.title("Options")
 n_topics = st.sidebar.slider("Number of Topics", 5, 20, value=9)
 
-n_sort_topic = st.sidebar.slider("Topic sort order by", 0, n_topics-1)
+n_sort_topic = st.sidebar.slider("Topic sort order by", 0, n_topics - 1)
 
 # Custom fileupload
 st.sidebar.markdown("## Custom dataset")
@@ -41,6 +41,7 @@ df = pd.read_csv(f_dataset, nrows=document_limit)
 n_documents = len(df)
 st.write(f"Loaded {n_documents:,} documents into memory.")
 
+
 @st.cache(ttl=st_time_to_live)
 def preprocess_input(f_dataset):
     with st.spinner("*Preprocessing text with spaCy*"):
@@ -49,17 +50,18 @@ def preprocess_input(f_dataset):
 
     r = requests.get(url, json=params)
     js = r.json()
-    
+
     return js
+
 
 @st.cache(ttl=st_time_to_live)
 def train_tokenized(tokenized, n_topics):
 
     data_input = {
-        "text_tokenized" : tokenized['text_tokenized'],
-        'n_topics' : n_topics,
+        "text_tokenized": tokenized["text_tokenized"],
+        "n_topics": n_topics,
     }
-    
+
     with st.spinner("*Running MALLET*"):
         url = "http://127.0.0.1:8000/LDA/train"
         r = requests.get(url, json=data_input)
@@ -71,13 +73,14 @@ def train_tokenized(tokenized, n_topics):
 
     return words, topics, docs
 
+
 @st.cache(ttl=st_time_to_live)
 def compute_wordclouds(words):
     imgs = []
 
     for topicID, dx in words.groupby("topicID"):
         dx = dx.sort_values("weight", ascending=False)
-    
+
         freq = {k: v for k, v in zip(dx.word, dx.weight)}
         WC = wordcloud.WordCloud(
             max_words=2000,
@@ -94,11 +97,10 @@ def compute_wordclouds(words):
     return imgs
 
 
-
 tokenized = preprocess_input(f_dataset)
 words, topics, docs = train_tokenized(tokenized, n_topics)
 
-with st.beta_expander(label='Word Clouds'):
+with st.beta_expander(label="Word Clouds"):
     cols = st.beta_columns(3)
     col = itertools.cycle(cols)
 
@@ -106,15 +108,13 @@ with st.beta_expander(label='Word Clouds'):
         active_column = next(col)
         active_column.image(img, f"Topic {i}", use_column_width=True)
 
-with st.beta_expander(label='Document Labels (top 200)'):
+with st.beta_expander(label="Document Labels (top 200)"):
     dx = pd.DataFrame(docs).sort_values(n_sort_topic, ascending=False)[:200]
     dx *= 100
 
-    dx.insert(loc=0, column='text', value=df['text'])
+    dx.insert(loc=0, column="text", value=df["text"])
     labels = list(range(n_topics))
-    tableviz = (
-        dx
-        .style.background_gradient(cmap="Blues", subset=labels)
-        .format("{:0.0f}", subset=labels)
+    tableviz = dx.style.background_gradient(cmap="Blues", subset=labels).format(
+        "{:0.0f}", subset=labels
     )
     st.table(tableviz)
