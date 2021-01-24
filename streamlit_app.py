@@ -23,7 +23,7 @@ st.set_page_config(
 st.title("Topic model explorer")
 
 st.sidebar.title("Options")
-n_topics = st.sidebar.slider("Number of Topics", 5, 20, value=9)
+n_topics = st.sidebar.slider("Number of Topics", 5, 40, value=30)
 
 n_sort_topic = st.sidebar.slider("Topic sort order by", 0, n_topics - 1)
 
@@ -104,6 +104,28 @@ def compute_wordclouds(words):
 
 tokenized = preprocess_input(f_dataset)
 words, topics, docs = train_tokenized(tokenized, n_topics)
+
+WC = compute_wordclouds(words)
+
+
+for topic_idx in range(n_topics):
+    col0, col1 = st.beta_columns((1, 2))
+
+    col0.image(WC[topic_idx], f"Topic {topic_idx}", use_column_width=True)
+
+    dx = pd.DataFrame(docs).sort_values(topic_idx, ascending=False)[:5]
+    dx *= 100
+    dx.insert(loc=0, column="text", value=df["text"])
+    dx = dx[["text", topic_idx]]
+    dx["text"] = dx["text"].str[:300]
+    labels = list(range(n_topics))
+    labels = [topic_idx]
+    tableviz = dx.style.background_gradient(cmap="Blues", subset=labels).format(
+        "{:0.0f}", subset=labels
+    )
+
+    col1.table(tableviz)
+
 
 with st.beta_expander(label="Word Clouds", expanded=True):
     cols = st.beta_columns(3)
