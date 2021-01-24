@@ -36,7 +36,7 @@ if f_upload is None:
 else:
     f_dataset = f_upload
 
-df = pd.read_csv(f_dataset, nrows=document_limit)
+df = pd.read_csv(f_dataset, nrows=document_limit, error_bad_lines=False))
 
 n_documents = len(df)
 
