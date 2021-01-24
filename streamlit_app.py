@@ -34,12 +34,17 @@ f_upload = st.sidebar.file_uploader('Upload a CSV, with the target column named 
 if f_upload is None:
     f_dataset = "example_data/reddit_suicide_data.csv"
 else:
-    f_dataset = f_dataset
+    f_dataset = f_upload
 
 df = pd.read_csv(f_dataset, nrows=document_limit)
 
 n_documents = len(df)
-st.write(f"Loaded {n_documents:,} documents into memory.")
+
+
+if f_upload:
+    st.write(f"Loaded {n_documents:,} documents from `{f_dataset.name}`")
+else:
+    st.write(f"Loaded {n_documents:,} documents from `{f_dataset}`")
 
 
 @st.cache(ttl=st_time_to_live)
@@ -100,7 +105,7 @@ def compute_wordclouds(words):
 tokenized = preprocess_input(f_dataset)
 words, topics, docs = train_tokenized(tokenized, n_topics)
 
-with st.beta_expander(label="Word Clouds"):
+with st.beta_expander(label="Word Clouds", expanded=True):
     cols = st.beta_columns(3)
     col = itertools.cycle(cols)
 
@@ -108,7 +113,7 @@ with st.beta_expander(label="Word Clouds"):
         active_column = next(col)
         active_column.image(img, f"Topic {i}", use_column_width=True)
 
-with st.beta_expander(label="Document Labels (top 200)"):
+with st.beta_expander(label="Document Labels (top 200)", expanded=True):
     dx = pd.DataFrame(docs).sort_values(n_sort_topic, ascending=False)[:200]
     dx *= 100
 
