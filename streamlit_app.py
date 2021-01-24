@@ -36,15 +36,19 @@ if f_upload is None:
 else:
     f_dataset = f_upload
 
-df = pd.read_csv(f_dataset, nrows=document_limit, error_bad_lines=False)
 
+limit_documents = st.sidebar.checkbox(f"Limit to {document_limit}", value=True)
+
+if not limit_documents:
+    document_limit = None
+
+df = pd.read_csv(f_dataset, nrows=document_limit, error_bad_lines=False)
 n_documents = len(df)
 
-
 if f_upload:
-    st.write(f"Loaded {n_documents:,} documents from `{f_dataset.name}`")
+    st.write(f"Loaded {len(df):,} documents from `{f_dataset.name}`")
 else:
-    st.write(f"Loaded {n_documents:,} documents from `{f_dataset}`")
+    st.write(f"Loaded {len(df):,} documents from `{f_dataset}`")
 
 
 @st.cache(ttl=st_time_to_live)
